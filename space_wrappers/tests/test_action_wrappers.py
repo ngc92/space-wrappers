@@ -18,6 +18,7 @@ def test_discretized_wrapper():
     expect.action_space = cont
     expect.expectation  = 0.5
     wrapper = DiscretizedActionWrapper(expect, 3)
+    assert is_discrete(wrapper.action_space)
     wrapper.step(1)
 
 def test_flattened_wrapper():

@@ -3,7 +3,10 @@ from gym import spaces
 import numpy as np
 import itertools
 import numbers
+from collections import namedtuple
 from .classify import *
+
+Transform = namedtuple('Transfom', ['original', 'target', 'convert_to', 'convert_from'])
 
 
 # Discretization 
@@ -19,7 +22,7 @@ def discretize(space, steps):
     # train a discrete agent to just apply discretize, only 
     # changing envs that are not already discrete.
     if is_discrete(space):
-        return space, lambda x: x
+        return Transform(space, space, lambda x: x, lambda x: x)
 
     # check that step number is valid and convert steps into a np array
     if not isinstance(steps, numbers.Integral):
@@ -36,7 +39,7 @@ def discretize(space, steps):
             hi = space.high[0]
             def convert(x):
                 return lo + (hi - lo) * float(x) / (steps-1)
-            return discrete_space, convert
+            return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=None)
         else:
             if isinstance(steps, numbers.Integral):
                 steps = np.full(space.low.shape, steps)
@@ -50,14 +53,14 @@ def discretize(space, steps):
             hi = space.high.flatten()
             def convert(x):
                 return np.reshape(lo + (hi - lo) * x / (steps-1), space.shape)
-            return discrete_space, convert
+            return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=None)
     raise ValueError()
 
 # Flattening
 def flatten(space):
     # no need to do anything if already flat
     if not is_compound(space):
-        return space, lambda x: x
+        return Transform(space, space, lambda x: x, lambda x: x)
 
     if isinstance(space, spaces.Box):
         shape = space.low.shape
@@ -65,7 +68,8 @@ def flatten(space):
         hi = space.high.flatten()
         def convert(x):
             return np.reshape(x, shape)
-        return spaces.Box(low=lo, high=hi), convert
+        flat_space = spaces.Box(low=lo, high=hi)
+        return Transform(original=space, target=flat_space, convert_from=convert, convert_to=None)
 
     elif isinstance(space, (spaces.MultiDiscrete, spaces.MultiBinary)):
         if isinstance(space, spaces.MultiDiscrete):
@@ -74,9 +78,9 @@ def flatten(space):
             ranges = [range(0, 2) for i in range(space.n)]
         prod   = itertools.product(*ranges)
         lookup = list(prod)
-        dspace = spaces.Discrete(len(lookup))
+        flat_space = spaces.Discrete(len(lookup))
         convert = lambda x: lookup[x]
-        return dspace, convert
+        return Transform(original=space, target=flat_space, convert_from=convert, convert_to=None)
 
     raise TypeError("Cannot flatten {}".format(type(space)))
 
@@ -97,4 +101,5 @@ def rescale(space, low, high):
     def convert(x):
         y = (x - low) * sc # y is in [0, rg]
         return y + space.low
-    return spaces.Box(low, high), convert
+    scaled_space = spaces.Box(low, high)
+    return Transform(original=space, target=scaled_space, convert_from=convert, convert_to=None)

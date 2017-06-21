@@ -8,77 +8,77 @@ import itertools
 
 def test_discretize_1d_box():
     cont = Box(np.array([0.0]), np.array([1.0]))
-    disc, f = discretize(cont, 10)
+    trafo = discretize(cont, 10)
 
-    assert disc == Discrete(10)
-    assert f(0) == 0.0
-    assert f(9) == 1.0
+    assert trafo.target == Discrete(10)
+    assert trafo.convert_from(0) == 0.0
+    assert trafo.convert_from(9) == 1.0
 
 def test_discretize_discrete():
     start = Discrete(5)
-    d, f = discretize(start, 10)
-    assert d == start
+    trafo = discretize(start, 10)
+    assert trafo.target == start
 
 def test_discretize_nd_box():
     cont = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]))
-    disc, f = discretize(cont, 10)
+    trafo = discretize(cont, 10)
 
-    assert disc == MultiDiscrete([(0, 9), (0, 9)])
-    assert (f((0, 0)) == [0.0, 1.0]).all()
-    assert (f((9, 9)) == [1.0, 2.0]).all()
+    assert trafo.target == MultiDiscrete([(0, 9), (0, 9)])
+    assert (trafo.convert_from((0, 0)) == [0.0, 1.0]).all()
+    assert (trafo.convert_from((9, 9)) == [1.0, 2.0]).all()
 
-    disc, f = discretize(cont, (5, 10))
+    trafo = discretize(cont, (5, 10))
 
-    assert disc == MultiDiscrete([(0, 4), (0, 9)])
-    assert (f((0, 0)) == [0.0, 1.0]).all()
-    assert (f((4, 9)) == [1.0, 2.0]).all()
+    assert trafo.target == MultiDiscrete([(0, 4), (0, 9)])
+    assert (trafo.convert_from((0, 0)) == [0.0, 1.0]).all()
+    assert (trafo.convert_from((4, 9)) == [1.0, 2.0]).all()
 
 # flatten
 def test_flatten_single():
     start = Discrete(5)
-    d, f = flatten(start)
-    assert d == start
+    trafo = flatten(start)
+    assert trafo.target == start
 
     start = Box(np.array([0.0]), np.array([1.0]))
-    d, f = flatten(start)
-    assert d == start
+    trafo = flatten(start)
+    assert trafo.target == start
 
 def test_flatten_discrete():
     md = MultiDiscrete([(0, 2), (0, 3)])
-    d, f = flatten(md)
+    trafo = flatten(md)
 
-    assert d == Discrete(12)
+    assert trafo.target == Discrete(12)
     # check that we get all actions exactly once
     actions = []
     for (i, j) in itertools.product([0, 1, 2], [0, 1, 2, 3]):
         actions += [(i, j)]
     for i in range(0, 12):
-        a = f(i)
+        a = trafo.convert_from(i)
         assert a in actions, (a, actions)
         actions = list(filter(lambda x: x != a, list(actions)))
     assert len(actions) == 0
 
     # same test for binary
     md = MultiBinary(3)
-    d, f = flatten(md)
+    trafo = flatten(md)
 
-    assert d == Discrete(2**3)
+    assert trafo.target == Discrete(2**3)
     # check that we get all actions exactly once
     actions = []
     for (i, j, k) in itertools.product([0, 1], [0, 1], [0, 1]):
         actions += [(i, j, k)]
     for i in range(0, 8):
-        a = f(i)
+        a = trafo.convert_from(i)
         assert a in actions, (a, actions)
         actions = list(filter(lambda x: x != a, actions))
     assert len(actions) == 0
 
 def test_flatten_continuous():
     ct = Box(np.zeros((2,2)), np.ones((2, 2)))
-    d, f = flatten(ct)
+    trafo = flatten(ct)
 
-    assert d == Box(np.zeros(4), np.ones(4))
-    assert (f([1, 2, 3, 4]) == [[1, 2], [3, 4]]).all()
+    assert trafo.target == Box(np.zeros(4), np.ones(4))
+    assert (trafo.convert_from([1, 2, 3, 4]) == [[1, 2], [3, 4]]).all()
 
 # rescale
 def test_rescale_discrete():
@@ -90,11 +90,11 @@ def test_rescale_discrete():
 
 def test_rescale_box():
     s = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]))
-    d, f = rescale(s, np.array([1.0, 0.0]), np.array([2.0, 1.0]))
+    trafo = rescale(s, np.array([1.0, 0.0]), np.array([2.0, 1.0]))
 
-    assert d == Box(np.array([1.0, 0.0]), np.array([2.0, 1.0]))
-    assert (f([1.0, 0.0]) == [0.0, 1.0]).all()
-    assert (f([2.0, 1.0]) == [1.0, 2.0]).all()
+    assert trafo.target == Box(np.array([1.0, 0.0]), np.array([2.0, 1.0]))
+    assert (trafo.convert_from([1.0, 0.0]) == [0.0, 1.0]).all()
+    assert (trafo.convert_from([2.0, 1.0]) == [1.0, 2.0]).all()
 
 
 
