@@ -39,7 +39,9 @@ def discretize(space, steps):
             hi = space.high[0]
             def convert(x):
                 return lo + (hi - lo) * float(x) / (steps-1)
-            return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=None)
+            def back(x):
+                return int((x - lo) * (steps-1) / (hi - lo))
+            return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=back)
         else:
             if isinstance(steps, numbers.Integral):
                 steps = np.full(space.low.shape, steps)
@@ -53,7 +55,9 @@ def discretize(space, steps):
             hi = space.high.flatten()
             def convert(x):
                 return np.reshape(lo + (hi - lo) * x / (steps-1), space.shape)
-            return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=None)
+            def back(x):
+                return np.reshape((x - lo) * (steps-1) / (hi - lo), (len(steps),)).astype(int)
+            return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=back)
     raise ValueError()
 
 # Flattening
@@ -68,8 +72,11 @@ def flatten(space):
         hi = space.high.flatten()
         def convert(x):
             return np.reshape(x, shape)
+        def back(x):
+            return np.reshape(x, lo.shape)
+
         flat_space = spaces.Box(low=lo, high=hi)
-        return Transform(original=space, target=flat_space, convert_from=convert, convert_to=None)
+        return Transform(original=space, target=flat_space, convert_from=convert, convert_to=back)
 
     elif isinstance(space, (spaces.MultiDiscrete, spaces.MultiBinary)):
         if isinstance(space, spaces.MultiDiscrete):
@@ -78,9 +85,11 @@ def flatten(space):
             ranges = [range(0, 2) for i in range(space.n)]
         prod   = itertools.product(*ranges)
         lookup = list(prod)
+        inverse_lookup = {value: key for (key, value) in enumerate(lookup)}
         flat_space = spaces.Discrete(len(lookup))
         convert = lambda x: lookup[x]
-        return Transform(original=space, target=flat_space, convert_from=convert, convert_to=None)
+        back    = lambda x: inverse_lookup[x]
+        return Transform(original=space, target=flat_space, convert_from=convert, convert_to=back)
 
     raise TypeError("Cannot flatten {}".format(type(space)))
 
@@ -101,5 +110,7 @@ def rescale(space, low, high):
     def convert(x):
         y = (x - low) * sc # y is in [0, rg]
         return y + space.low
+    def back(x):
+        return (x - space.low) / sc + low
     scaled_space = spaces.Box(low, high)
-    return Transform(original=space, target=scaled_space, convert_from=convert, convert_to=None)
+    return Transform(original=space, target=scaled_space, convert_from=convert, convert_to=back)

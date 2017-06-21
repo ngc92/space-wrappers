@@ -4,6 +4,9 @@ from gym.spaces import *
 import numpy as np
 import itertools
 
+def check_convert(trafo, target, original):
+    assert (trafo.convert_from(target) == original).all()
+    assert (trafo.convert_to(original) == target).all()
 # discretize
 
 def test_discretize_1d_box():
@@ -13,6 +16,8 @@ def test_discretize_1d_box():
     assert trafo.target == Discrete(10)
     assert trafo.convert_from(0) == 0.0
     assert trafo.convert_from(9) == 1.0
+    assert trafo.convert_to(0.0) == 0
+    assert trafo.convert_to(1.0) == 9
 
 def test_discretize_discrete():
     start = Discrete(5)
@@ -24,14 +29,14 @@ def test_discretize_nd_box():
     trafo = discretize(cont, 10)
 
     assert trafo.target == MultiDiscrete([(0, 9), (0, 9)])
-    assert (trafo.convert_from((0, 0)) == [0.0, 1.0]).all()
-    assert (trafo.convert_from((9, 9)) == [1.0, 2.0]).all()
+    check_convert(trafo, (0, 0), [0.0, 1.0])
+    check_convert(trafo, (9, 9), [1.0, 2.0])
 
     trafo = discretize(cont, (5, 10))
 
     assert trafo.target == MultiDiscrete([(0, 4), (0, 9)])
-    assert (trafo.convert_from((0, 0)) == [0.0, 1.0]).all()
-    assert (trafo.convert_from((4, 9)) == [1.0, 2.0]).all()
+    check_convert(trafo, (0, 0), [0.0, 1.0])
+    check_convert(trafo, (4, 9), [1.0, 2.0])
 
 # flatten
 def test_flatten_single():
@@ -55,6 +60,7 @@ def test_flatten_discrete():
     for i in range(0, 12):
         a = trafo.convert_from(i)
         assert a in actions, (a, actions)
+        assert trafo.convert_to(a) == i
         actions = list(filter(lambda x: x != a, list(actions)))
     assert len(actions) == 0
 
@@ -69,6 +75,7 @@ def test_flatten_discrete():
         actions += [(i, j, k)]
     for i in range(0, 8):
         a = trafo.convert_from(i)
+        assert trafo.convert_to(a) == i
         assert a in actions, (a, actions)
         actions = list(filter(lambda x: x != a, actions))
     assert len(actions) == 0
@@ -78,7 +85,7 @@ def test_flatten_continuous():
     trafo = flatten(ct)
 
     assert trafo.target == Box(np.zeros(4), np.ones(4))
-    assert (trafo.convert_from([1, 2, 3, 4]) == [[1, 2], [3, 4]]).all()
+    check_convert(trafo, [1, 2, 3, 4], [[1, 2], [3, 4]])
 
 # rescale
 def test_rescale_discrete():
@@ -93,9 +100,8 @@ def test_rescale_box():
     trafo = rescale(s, np.array([1.0, 0.0]), np.array([2.0, 1.0]))
 
     assert trafo.target == Box(np.array([1.0, 0.0]), np.array([2.0, 1.0]))
-    assert (trafo.convert_from([1.0, 0.0]) == [0.0, 1.0]).all()
-    assert (trafo.convert_from([2.0, 1.0]) == [1.0, 2.0]).all()
-
+    check_convert(trafo, [1.0, 0.0], [0.0, 1.0])
+    check_convert(trafo, [2.0, 1.0], [1.0, 2.0])
 
 
 if __name__ == '__main__':
