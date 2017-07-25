@@ -103,6 +103,12 @@ def test_rescale_box():
     check_convert(trafo, [1.0, 0.0], [0.0, 1.0])
     check_convert(trafo, [2.0, 1.0], [1.0, 2.0])
 
+    # scalar rescale
+    s = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]))
+    trafo = rescale(s, 0.0, 1.0)
+
+    assert trafo.target == Box(np.array([0.0, 0.0]), np.array([1.0, 1.0]))
+
 
 if __name__ == '__main__':
     test_discretize_1d_box()

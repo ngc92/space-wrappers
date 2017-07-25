@@ -11,6 +11,21 @@ Transform = namedtuple('Transfom', ['original', 'target', 'convert_to', 'convert
 
 # Discretization 
 def discretize(space, steps):
+    """ Creates a discretized version of `space` and returns 
+        a `Transform` that contains the conversion functions.
+        If the space is already discrete, the identity 
+        is returned.
+        
+        Arguments: 
+          space - The space to be discretized. 
+          steps - The number of discrete steps to produce 
+                  for each continuous dimension. Can be an 
+                  Integer or a list.
+
+        Exceptions:
+          ValueError: If less than two steps are are supplied.
+
+    """
     # there are two possible ways how we could handle already
     # discrete spaces. 
     #  1) throw an error because (unless
@@ -100,7 +115,7 @@ def rescale(space, low, high):
         raise TypeError("Cannot rescale discrete space {}".format(space))
 
     if not isinstance(space, spaces.Box):
-        raise TypeError("Cannot rescale non-Box space {}".format(space))
+        raise NotImplementedError()
 
     lo = space.low
     hi = space.high
@@ -112,5 +127,9 @@ def rescale(space, low, high):
         return y + space.low
     def back(x):
         return (x - space.low) / sc + low
+    if isinstance(low, numbers.Number):
+        low = np.ones_like(space.low) * low
+    if isinstance(high, numbers.Number):
+        high = np.ones_like(space.high) * high
     scaled_space = spaces.Box(low, high)
     return Transform(original=space, target=scaled_space, convert_from=convert, convert_to=back)
