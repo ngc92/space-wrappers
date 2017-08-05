@@ -13,5 +13,6 @@ General purpose environment wrappers for openai gym.
 ## TODO
 - [ ] Documentation
 - [ ] Handle Tuple spaces
-- [ ] More Sanity checks (i.e. no rescale for infinite ranges)
+- [ ] More Sanity checks
+- [ ] Image transformations (resample, resize, ...)
 

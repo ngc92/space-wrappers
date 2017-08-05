@@ -5,10 +5,10 @@ import numpy as np
 import itertools
 
 def check_convert(trafo, target, original):
-    assert (trafo.convert_from(target) == original).all()
-    assert (trafo.convert_to(original) == target).all()
-# discretize
+    assert (trafo.convert_from(target) == original).all(), "%s != %s" % (trafo.convert_from(target), original)
+    assert (trafo.convert_to(original) == target).all(), "%s != %s" % (trafo.convert_to(original), target)
 
+# discretize
 def test_discretize_1d_box():
     cont = Box(np.array([0.0]), np.array([1.0]))
     trafo = discretize(cont, 10)
@@ -109,6 +109,41 @@ def test_rescale_box():
 
     assert trafo.target == Box(np.array([0.0, 0.0]), np.array([1.0, 1.0]))
 
+def test_rescale_inf():
+    # check that invalid target range causes error
+    try:
+        rescale(Box(np.array([0.0]), np.array([1.0])), np.inf, np.inf)
+    except ValueError: pass
+
+    # positive infinite
+    s = Box(np.array([0.0, 0.0]), np.array([1.0, np.inf]))
+    trafo = rescale(s, np.array([1.0, 1.0]), np.array([3.0, np.inf]))
+
+    assert trafo.target == Box(np.array([1.0, 1.0]), np.array([3.0, np.inf]))
+    check_convert(trafo, [3.0, 1.0], [1.0, 0.0])
+
+    # negative infinite
+    s = Box(np.array([-1.0, -np.inf]), np.array([0.0, 0.0]))
+    trafo = rescale(s, np.array([1.0, -np.inf]), np.array([3.0, 1.0]))
+
+    assert trafo.target == Box(np.array([1.0, -np.inf]), np.array([3.0, 1.0]))
+    check_convert(trafo, [1.0, 1.0], [-1.0, 0.0])
+
+    # two sided
+    s = Box(np.array([-1.0, -np.inf]), np.array([0.0, np.inf]))
+    trafo = rescale(s, np.array([1.0, -np.inf]), np.array([3.0, np.inf]))
+
+    assert trafo.target == Box(np.array([1.0, -np.inf]), np.array([3.0, np.inf]))
+    check_convert(trafo, [1.0, 12.0], [-1.0, 12.0])
+
+    # cannot linearly transform infinite to finite range
+    try:
+        s = Box(np.array([-np.inf, 0.0]), np.array([np.inf, np.inf]))
+        trafo = rescale(s, np.array([1.0, 1.0]), np.array([3.0, np.inf]))
+    except ValueError: pass
+
+
+
 
 if __name__ == '__main__':
     test_discretize_1d_box()
@@ -121,4 +156,5 @@ if __name__ == '__main__':
 
     test_rescale_discrete()
     test_rescale_box()
+    test_rescale_inf()
 

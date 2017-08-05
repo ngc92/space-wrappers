@@ -120,28 +120,65 @@ def flatten(space):
 
 # rescale a continuous action space
 def rescale(space, low, high):
+    """ A space transform that changes a continuous
+        space to a new one with the specified upper and lower
+        bounds by linear transformations. If source and target
+        range are infinite, only the offset is corrected. If
+        one of the ranges is finite and the other infinite, an
+        error is raised.
+    :rtype: Transform
+    :param gym.space.Space space: The original space. Needs to be
+        continuous.
+    :param low: Lower bound of the new space.
+    :param high: Upper bound of the new space.
+    """
     if is_discrete(space):
         raise TypeError("Cannot rescale discrete space {}".format(space))
 
     if not isinstance(space, spaces.Box):
         raise NotImplementedError()
 
+    # shortcuts
     lo = space.low
     hi = space.high
-    rg = hi - lo
-    rs = high - low
-    sc = rg / rs
 
-    def convert(x):
-        y = (x - low) * sc # y is in [0, rg]
-        return y + space.low
-
-    def back(x):
-        return (x - space.low) / sc + low
-
+    # ensure new low/high values are arrays
     if isinstance(low, numbers.Number):
         low = np.ones_like(space.low) * low
     if isinstance(high, numbers.Number):
         high = np.ones_like(space.high) * high
+
+    offset = np.copy(low)
+    rg = hi - lo
+    rs = high - low
+    if np.isnan(rs).any():
+        raise ValueError("Invalid range %s to %s specified" % (low, high))
+
+    # the following code is responsible for correctly setting the scale factor and offset
+    # in cases where the limits of the ranges become infinite.
+    scale_factor = np.zeros_like(lo)
+    for i in range(lo.size):
+        if np.isinf(rg[i]) and np.isinf(rs[i]):
+            scale_factor[i] = 1.0
+        else:
+            scale_factor[i] = rg[i] / rs[i]
+
+        if low[i] == -np.inf and lo[i] == -np.inf:
+            lo[i] = 0.0
+            if high[i] == np.inf and hi[i] == np.inf:
+                offset[i] = 0.0
+            else:
+                offset[i] = high[i] - hi[i]
+
+    if np.isinf(scale_factor).any() or (scale_factor == 0.0).any():
+        raise ValueError("Cannot map finite to infinite range [%s to %s] to [%s to %s] " % (lo, hi, low, high))
+
+    def convert(x):
+        y = (x - offset) * scale_factor # y is in [0, rg]
+        return y + lo
+
+    def back(x):
+        return (x - lo) / scale_factor + offset
+
     scaled_space = spaces.Box(low, high)
     return Transform(original=space, target=scaled_space, convert_from=convert, convert_to=back)
