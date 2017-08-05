@@ -2,10 +2,12 @@
 import gym
 from gym import spaces
 
+
 def assert_space(space):
     """ Raise a `TypeError` exception if `space` is not a `gym.spaces.Space`. """
     if not isinstance(space, gym.Space):
         raise TypeError("Expected a gym.spaces.Space, got {}".format(type(space)))
+
 
 def is_discrete(space):
     """ Checks if a space is discrete. A space is considered to
@@ -25,6 +27,7 @@ def is_discrete(space):
     elif isinstance(space, spaces.Tuple):
         return all(map(is_discrete, space.spaces))
     raise TypeError("Unknown space {} supplied".format(type(space)))
+
 
 def is_compound(space):
     """ Checks whether a space is a compound space. These are non-scalar

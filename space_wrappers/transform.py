@@ -6,7 +6,7 @@ import numbers
 from collections import namedtuple
 from .classify import *
 
-Transform = namedtuple('Transfom', ['original', 'target', 'convert_to', 'convert_from'])
+Transform = namedtuple('Transform', ['original', 'target', 'convert_to', 'convert_from'])
 
 
 # Discretization 
@@ -52,10 +52,13 @@ def discretize(space, steps):
             discrete_space = spaces.Discrete(steps)
             lo = space.low[0]
             hi = space.high[0]
+
             def convert(x):
                 return lo + (hi - lo) * float(x) / (steps-1)
+
             def back(x):
                 return int((x - lo) * (steps-1) / (hi - lo))
+
             return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=back)
         else:
             if isinstance(steps, numbers.Integral):
@@ -68,12 +71,16 @@ def discretize(space, steps):
             discrete_space = spaces.MultiDiscrete(list(zip(starts.flatten(), (steps-1).flatten())))
             lo = space.low.flatten()
             hi = space.high.flatten()
+
             def convert(x):
                 return np.reshape(lo + (hi - lo) * x / (steps-1), space.shape)
+
             def back(x):
                 return np.reshape((x - lo) * (steps-1) / (hi - lo), (len(steps),)).astype(int)
+
             return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=back)
     raise ValueError()
+
 
 # Flattening
 def flatten(space):
@@ -85,8 +92,10 @@ def flatten(space):
         shape = space.low.shape
         lo = space.low.flatten()
         hi = space.high.flatten()
+
         def convert(x):
             return np.reshape(x, shape)
+
         def back(x):
             return np.reshape(x, lo.shape)
 
@@ -122,11 +131,14 @@ def rescale(space, low, high):
     rg = hi - lo
     rs = high - low
     sc = rg / rs
+
     def convert(x):
         y = (x - low) * sc # y is in [0, rg]
         return y + space.low
+
     def back(x):
         return (x - space.low) / sc + low
+
     if isinstance(low, numbers.Number):
         low = np.ones_like(space.low) * low
     if isinstance(high, numbers.Number):

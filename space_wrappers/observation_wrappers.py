@@ -1,6 +1,7 @@
 from gym import ObservationWrapper
 from .transform import *
 
+
 class FlattenedObservationWrapper(ObservationWrapper):
     def __init__(self, env):
         super(FlattenedObservationWrapper, self).__init__(env)
@@ -8,12 +9,14 @@ class FlattenedObservationWrapper(ObservationWrapper):
         self.observation_space = trafo.target
         self._observation = trafo.convert_to
 
+
 class DiscretizedObservationWrapper(ObservationWrapper):
     def __init__(self, env, steps):
         super(DiscretizedObservationWrapper, self).__init__(env)
         trafo = discretize(env.observation_space, steps)
         self.observation_space = trafo.target
         self._observation = trafo.convert_to
+
 
 class RescaledObservationWrapper(ObservationWrapper):
     def __init__(self, env, low, high):
