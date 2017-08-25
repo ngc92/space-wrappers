@@ -49,3 +49,23 @@ def is_compound(space):
 
     raise TypeError("Unknown space {} supplied".format(type(space)))
 
+
+def num_discrete_actions(space):
+    """
+    For a discrete space, gets the number of available actions as a tuple.
+    :param gym.Space space: The discrete space which to inspect.
+    :return tuple: Tuple of integers containing the number of discrete actions.
+    :raises TypeError: If the space is not discrete.
+    """
+    if not is_discrete(space):
+        raise TypeError("Space {} is not discrete".format(space))
+    if isinstance(space, spaces.Discrete):
+        return tuple((space.n,))
+    elif isinstance(space, spaces.MultiDiscrete):
+        # add +1 here as space.high is an inclusive bound
+        return tuple(space.high - space.low + 1)
+    elif isinstance(space, spaces.MultiBinary):
+        return (2,) * space.n
+
+    raise NotImplementedError()
+
