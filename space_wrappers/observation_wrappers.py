@@ -1,5 +1,6 @@
 from gym import ObservationWrapper
-from .transform import *
+from .transform import flatten, discretize, rescale
+from .image import image_resize
 
 
 class FlattenedObservationWrapper(ObservationWrapper):
@@ -24,3 +25,12 @@ class RescaledObservationWrapper(ObservationWrapper):
         trafo = rescale(env.observation_space, low=low, high=high)
         self.observation_space = trafo.target
         self._observation = trafo.convert_to
+
+
+class ImageResizeWrapper(ObservationWrapper):
+    def __init__(self, env, new_size):
+        super(ImageResizeWrapper, self).__init__(env)
+        trafo = image_resize(env.observation_space, new_size=new_size)
+        self.observation_space = trafo.target
+        self._observation = trafo.convert_to
+
