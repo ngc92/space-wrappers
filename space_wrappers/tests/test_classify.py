@@ -1,6 +1,8 @@
 from space_wrappers.classify import *
 from gym.spaces import *
 import numpy as np
+import pytest
+
 
 # is_discrete
 def test_is_discrete():
@@ -10,10 +12,9 @@ def test_is_discrete():
     assert is_discrete(Tuple((Discrete(5), Discrete(4))))
     assert not is_discrete(Box(np.zeros(2), np.ones(2)))
 
-    try:
+    with pytest.raises(TypeError):
         is_discrete(5)
-        assert False, "No exception throw!"
-    except TypeError: pass
+
 
 def test_is_compound():
     assert not is_compound(Discrete(10))
@@ -23,11 +24,5 @@ def test_is_compound():
     assert is_compound(Box(np.zeros(2), np.ones(2)))
     assert not is_compound(Box(np.zeros(1), np.ones(1)))
 
-    try:
+    with pytest.raises(TypeError):
         is_compound(5)
-        assert False, "No exception throw!"
-    except TypeError: pass
-
-if __name__ == '__main__':
-    test_is_discrete()
-    test_is_compound()

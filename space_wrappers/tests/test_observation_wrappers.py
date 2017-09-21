@@ -2,6 +2,8 @@ import gym
 from space_wrappers import *
 from gym import spaces
 import numpy as np
+import pytest
+
 
 class ProvideEnv(gym.Env):
     def __init__(self):
@@ -11,6 +13,8 @@ class ProvideEnv(gym.Env):
         return self.provide_observation, 0.0, True, {}
 
 entry_point = "space_wrappers.tests.test_observation_wrappers:ProvideEnv"
+gym.envs.register(id='ProvideTest-v0', entry_point=entry_point)
+
 
 def test_discretized_wrapper():
     expect = gym.make("ProvideTest-v0")
@@ -23,6 +27,7 @@ def test_discretized_wrapper():
     assert wrapper.observation_space.contains(o)
     assert o == 1
 
+
 def test_flattened_wrapper():
     expect = gym.make("ProvideTest-v0")
     md = spaces.MultiDiscrete([(0, 1), (0, 1)])
@@ -33,6 +38,7 @@ def test_flattened_wrapper():
     assert wrapper.observation_space.contains(o)
     assert o == 3
 
+
 def test_rescaled_wrapper():
     expect = gym.make("ProvideTest-v0")
     bx = spaces.Box(np.array([0.0]), np.array([1.0]))
@@ -42,10 +48,3 @@ def test_rescaled_wrapper():
     o, r, d, i = wrapper.step(1.5)
     assert wrapper.observation_space.contains(o)
     assert o == 1.5
-
-
-if __name__ == '__main__':
-    gym.envs.register(id='ProvideTest-v0', entry_point=entry_point)
-    test_discretized_wrapper()
-    test_flattened_wrapper()
-    test_rescaled_wrapper()

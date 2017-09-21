@@ -3,10 +3,13 @@ from space_wrappers.transform import discretize, flatten, rescale
 from gym.spaces import *
 import numpy as np
 import itertools
+import pytest
+
 
 def check_convert(trafo, target, original):
     assert (trafo.convert_from(target) == original).all(), "%s != %s" % (trafo.convert_from(target), original)
     assert (trafo.convert_to(original) == target).all(), "%s != %s" % (trafo.convert_to(original), target)
+
 
 # discretize
 def test_discretize_1d_box():
@@ -19,10 +22,12 @@ def test_discretize_1d_box():
     assert trafo.convert_to(0.0) == 0
     assert trafo.convert_to(1.0) == 9
 
+
 def test_discretize_discrete():
     start = Discrete(5)
     trafo = discretize(start, 10)
     assert trafo.target == start
+
 
 def test_discretize_nd_box():
     cont = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]))
@@ -38,6 +43,7 @@ def test_discretize_nd_box():
     check_convert(trafo, (0, 0), [0.0, 1.0])
     check_convert(trafo, (4, 9), [1.0, 2.0])
 
+
 # flatten
 def test_flatten_single():
     start = Discrete(5)
@@ -47,6 +53,7 @@ def test_flatten_single():
     start = Box(np.array([0.0]), np.array([1.0]))
     trafo = flatten(start)
     assert trafo.target == start
+
 
 def test_flatten_discrete():
     md = MultiDiscrete([(0, 2), (0, 3)])
@@ -80,6 +87,7 @@ def test_flatten_discrete():
         actions = list(filter(lambda x: x != a, actions))
     assert len(actions) == 0
 
+
 def test_flatten_continuous():
     ct = Box(np.zeros((2,2)), np.ones((2, 2)))
     trafo = flatten(ct)
@@ -87,13 +95,13 @@ def test_flatten_continuous():
     assert trafo.target == Box(np.zeros(4), np.ones(4))
     check_convert(trafo, [1, 2, 3, 4], [[1, 2], [3, 4]])
 
+
 # rescale
-def test_rescale_discrete():
-    for s in [Discrete(10), MultiDiscrete([(0, 2), (0, 3)]), MultiBinary(5)]:
-        try:
-            rescale(s, 1.0)
-            assert False 
-        except TypeError: pass
+@pytest.mark.parametrize("space", [Discrete(10), MultiDiscrete([(0, 2), (0, 3)]), MultiBinary(5)])
+def test_rescale_discrete(space):
+    with pytest.raises(TypeError):
+        rescale(space, 0.0, 1.0)
+
 
 def test_rescale_box():
     s = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]))
@@ -109,12 +117,19 @@ def test_rescale_box():
 
     assert trafo.target == Box(np.array([0.0, 0.0]), np.array([1.0, 1.0]))
 
-def test_rescale_inf():
-    # check that invalid target range causes error
-    try:
-        rescale(Box(np.array([0.0]), np.array([1.0])), np.inf, np.inf)
-    except ValueError: pass
 
+def test_rescale_checks():
+    # check that invalid target range causes error
+    with pytest.raises(ValueError):
+        rescale(Box(np.array([0.0]), np.array([1.0])), np.inf, np.inf)
+
+    # cannot linearly transform infinite to finite range
+    with pytest.raises(ValueError):
+        s = Box(np.array([-np.inf, 0.0]), np.array([np.inf, np.inf]))
+        trafo = rescale(s, np.array([1.0, 1.0]), np.array([3.0, np.inf]))
+
+
+def test_rescale_inf():
     # positive infinite
     s = Box(np.array([0.0, 0.0]), np.array([1.0, np.inf]))
     trafo = rescale(s, np.array([1.0, 1.0]), np.array([3.0, np.inf]))
@@ -135,26 +150,3 @@ def test_rescale_inf():
 
     assert trafo.target == Box(np.array([1.0, -np.inf]), np.array([3.0, np.inf]))
     check_convert(trafo, [1.0, 12.0], [-1.0, 12.0])
-
-    # cannot linearly transform infinite to finite range
-    try:
-        s = Box(np.array([-np.inf, 0.0]), np.array([np.inf, np.inf]))
-        trafo = rescale(s, np.array([1.0, 1.0]), np.array([3.0, np.inf]))
-    except ValueError: pass
-
-
-
-
-if __name__ == '__main__':
-    test_discretize_1d_box()
-    test_discretize_discrete()
-    test_discretize_nd_box()
-
-    test_flatten_single()
-    test_flatten_discrete()
-    test_flatten_continuous()
-
-    test_rescale_discrete()
-    test_rescale_box()
-    test_rescale_inf()
-
