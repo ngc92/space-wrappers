@@ -15,8 +15,8 @@ def is_discrete(space):
         or MultiBinary.
         A Tuple space is discrete if it contains only discrete 
         subspaces.
-        If `space` is an instance of another type, `TypeError` is
-        raised.
+        :raises TypeError, if `space` is not any of `Discrete`, `MultiDiscrete`,
+                `MultiDiscrete` or `Box`.
     """
     assert_space(space)
 

@@ -1,5 +1,5 @@
 # transform spaces
-from gym import spaces
+from gym import Space, spaces
 import numpy as np
 import itertools
 import numbers
@@ -11,21 +11,21 @@ Transform = namedtuple('Transform', ['original', 'target', 'convert_to', 'conver
 
 # Discretization 
 def discretize(space, steps):
-    """ Creates a discretized version of `space` and returns 
-        a `Transform` that contains the conversion functions.
-        If the space is already discrete, the identity 
-        is returned.
-        
-        Arguments: 
-          space - The space to be discretized. 
-          steps - The number of discrete steps to produce 
-                  for each continuous dimension. Can be an 
-                  Integer or a list.
-
-        Exceptions:
-          ValueError: If less than two steps are are supplied.
-
     """
+    Creates a discretized version of `space` and returns
+    a `Transform` that contains the conversion functions.
+    If the space is already discrete, the identity
+    is returned. The steps are distributed such that the old
+    minimum and maximum value can still be reached in the new
+    domain.
+    :param gym.Space space: The space to be discretized.
+    :param int steps: The number of discrete steps to produce
+                  for each continuous dimension. Can be an
+                  Integer or a list.
+    :raises ValueError: If less than two steps are are supplied.
+    :return Transform: A `Transform` to the discretized space.
+    """
+
     # there are two possible ways how we could handle already
     # discrete spaces. 
     #  1) throw an error because (unless
@@ -36,6 +36,7 @@ def discretize(space, steps):
     # here, we implement the second. This allows scripts that 
     # train a discrete agent to just apply discretize, only 
     # changing envs that are not already discrete.
+
     if is_discrete(space):
         return Transform(space, space, lambda x: x, lambda x: x)
 
@@ -84,6 +85,25 @@ def discretize(space, steps):
 
 # Flattening
 def flatten(space):
+    """
+    Flattens a space, which means that for continuous spaces (Box)
+    the space is reshaped to be of rank 1, and for multidimensional
+    discrete spaces a single discrete action with an increased number
+    of possible values is created.
+    Please be aware that the latter can be potentially pathological in case
+    the input space has many discrete actions, as the number of single discrete
+    actions increases exponentially ("curse of dimensionality").
+    :param gym.Space space: The space that will be flattened
+    :return Transform: A transform object describing the transformation
+            to the flattened space.
+    :raises TypeError, if `space` is not a `gym.Space`.
+            NotImplementedError, if the supplied space is neither `Box` nor
+            `MultiDiscrete` or `MultiBinary`, and not recodgnized as
+            an already flat space by `is_compound`.
+    """
+    if not isinstance(space, Space):
+        raise TypeError("Expected gym.Space, got {}".format(type(space)))
+
     # no need to do anything if already flat
     if not is_compound(space):
         return Transform(space, space, lambda x: x, lambda x: x)
@@ -114,8 +134,8 @@ def flatten(space):
         convert = lambda x: lookup[x]
         back    = lambda x: inverse_lookup[x]
         return Transform(original=space, target=flat_space, convert_from=convert, convert_to=back)
-
-    raise TypeError("Cannot flatten {}".format(type(space)))
+    else:
+        raise NotImplementedError("Does not know how to flatten {}".format(type(space)))
 
 
 # rescale a continuous action space
@@ -127,7 +147,7 @@ def rescale(space, low, high):
         one of the ranges is finite and the other infinite, an
         error is raised.
     :rtype: Transform
-    :param gym.space.Space space: The original space. Needs to be
+    :param gym.Space space: The original space. Needs to be
         continuous.
     :param low: Lower bound of the new space.
     :param high: Upper bound of the new space.
