@@ -4,11 +4,19 @@ from gym.spaces import *
 import numpy as np
 import itertools
 import pytest
+import numbers
 
 
 def check_convert(trafo, target, original):
-    assert (trafo.convert_from(target) == original).all(), "%s != %s" % (trafo.convert_from(target), original)
-    assert (trafo.convert_to(original) == target).all(), "%s != %s" % (trafo.convert_to(original), target)
+    if isinstance(original, numbers.Number):
+        assert trafo.convert_from(target) == original
+    else:
+        assert (trafo.convert_from(target) == original).all()
+
+    if isinstance(target, numbers.Number):
+        assert trafo.convert_to(original) == target
+    else:
+        assert (trafo.convert_to(original) == target).all()
 
 
 # discretize
@@ -27,6 +35,7 @@ def test_discretize_discrete():
     start = Discrete(5)
     trafo = discretize(start, 10)
     assert trafo.target == start
+    check_convert(trafo, 3, 3)
 
 
 def test_discretize_nd_box():
@@ -44,15 +53,34 @@ def test_discretize_nd_box():
     check_convert(trafo, (4, 9), [1.0, 2.0])
 
 
+def test_discretize_errors():
+    cont = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]))
+    with pytest.raises(TypeError):
+        trafo = discretize(5, 5)
+
+    with pytest.raises(ValueError):
+        trafo = discretize(cont, 1)
+
+    with pytest.raises(NotImplementedError):
+        trafo = discretize(Tuple(spaces=[cont]), 10)
+
+    with pytest.raises(ValueError):
+        trafo = discretize(cont, [1, 1])
+
+    with pytest.raises(ValueError):
+        trafo = discretize(cont, [5, 5, 5])
+
 # flatten
 def test_flatten_single():
     start = Discrete(5)
     trafo = flatten(start)
     assert trafo.target == start
+    check_convert(trafo, 4, 4)
 
     start = Box(np.array([0.0]), np.array([1.0]))
     trafo = flatten(start)
     assert trafo.target == start
+    check_convert(trafo, 0.5, 0.5)
 
 
 def test_flatten_discrete():
@@ -96,11 +124,27 @@ def test_flatten_continuous():
     check_convert(trafo, [1, 2, 3, 4], [[1, 2], [3, 4]])
 
 
+def test_flatten_errors():
+    class UnknownSpace(gym.Space):
+        pass
+
+    with pytest.raises(TypeError):
+        flatten(5)
+
+    with pytest.raises(NotImplementedError):
+        flatten(UnknownSpace())
+
+
 # rescale
 @pytest.mark.parametrize("space", [Discrete(10), MultiDiscrete([(0, 2), (0, 3)]), MultiBinary(5)])
 def test_rescale_discrete(space):
     with pytest.raises(TypeError):
         rescale(space, 0.0, 1.0)
+
+
+def test_rescale_tuple():
+    with pytest.raises(NotImplementedError):
+        rescale(Tuple([Box(0, 1, (1, 1))]), 0.0, 1.0)
 
 
 def test_rescale_box():

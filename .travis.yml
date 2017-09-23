@@ -6,4 +6,4 @@ install:
   - pip install gym
 
 script:
-  py.test
+  py.test --cov

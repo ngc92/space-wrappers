@@ -78,7 +78,7 @@ class ToScalarActionWrapper(ActionWrapper):
         super(ToScalarActionWrapper, self).__init__(env)
 
     def _reverse_action(self, action):
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def _action(self, action):
         if isinstance(action, np.ndarray):

@@ -19,7 +19,7 @@ def discretize(space, steps):
     minimum and maximum value can still be reached in the new
     domain.
     :param gym.Space space: The space to be discretized.
-    :param int steps: The number of discrete steps to produce
+    :param int|Iterable steps: The number of discrete steps to produce
                   for each continuous dimension. Can be an
                   Integer or a list.
     :raises ValueError: If less than two steps are are supplied.
@@ -64,7 +64,9 @@ def discretize(space, steps):
         else:
             if isinstance(steps, numbers.Integral):
                 steps = np.full(space.low.shape, steps)
-            assert steps.shape == space.shape, "supplied steps have invalid shape"
+            if steps.shape != space.shape:
+                raise ValueError("Supplied steps {} have invalid shape, expected {}".format(steps, steps.shape,
+                                                                                            space.shape))
             starts = np.zeros_like(steps)
             # MultiDiscrete is inclusive, thus we need steps-1 as last value
             # currently, MultiDiscrete iterates twice over its input, which is not possible for a zip
@@ -80,7 +82,8 @@ def discretize(space, steps):
                 return np.reshape((x - lo) * (steps-1) / (hi - lo), (len(steps),)).astype(int)
 
             return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=back)
-    raise ValueError()
+
+    raise NotImplementedError("Unknown space {} of type {} supplied".format(space, type(space)))  # pragma: no cover
 
 
 # Flattening
@@ -98,12 +101,9 @@ def flatten(space):
             to the flattened space.
     :raises TypeError, if `space` is not a `gym.Space`.
             NotImplementedError, if the supplied space is neither `Box` nor
-            `MultiDiscrete` or `MultiBinary`, and not recodgnized as
+            `MultiDiscrete` or `MultiBinary`, and not recognized as
             an already flat space by `is_compound`.
     """
-    if not isinstance(space, Space):
-        raise TypeError("Expected gym.Space, got {}".format(type(space)))
-
     # no need to do anything if already flat
     if not is_compound(space):
         return Transform(space, space, lambda x: x, lambda x: x)
@@ -125,7 +125,7 @@ def flatten(space):
     elif isinstance(space, (spaces.MultiDiscrete, spaces.MultiBinary)):
         if isinstance(space, spaces.MultiDiscrete):
             ranges = [range(space.low[i], space.high[i]+1, 1) for i in range(space.num_discrete_space)]
-        elif isinstance(space, spaces.MultiBinary):
+        elif isinstance(space, spaces.MultiBinary):  # pragma: no branch
             ranges = [range(0, 2) for i in range(space.n)]
         prod   = itertools.product(*ranges)
         lookup = list(prod)
@@ -134,8 +134,8 @@ def flatten(space):
         convert = lambda x: lookup[x]
         back    = lambda x: inverse_lookup[x]
         return Transform(original=space, target=flat_space, convert_from=convert, convert_to=back)
-    else:
-        raise NotImplementedError("Does not know how to flatten {}".format(type(space)))
+
+    raise NotImplementedError("Does not know how to flatten {}".format(type(space)))  # pragma: no cover
 
 
 # rescale a continuous action space

@@ -15,8 +15,7 @@ def is_discrete(space):
         or MultiBinary.
         A Tuple space is discrete if it contains only discrete 
         subspaces.
-        :raises TypeError, if `space` is not any of `Discrete`, `MultiDiscrete`,
-                `MultiDiscrete` or `Box`.
+        :raises TypeError: If the space is no `gym.Space`.
     """
     assert_space(space)
 
@@ -26,7 +25,8 @@ def is_discrete(space):
         return False
     elif isinstance(space, spaces.Tuple):
         return all(map(is_discrete, space.spaces))
-    raise TypeError("Unknown space {} supplied".format(type(space)))
+
+    raise NotImplementedError("Unknown space {} of type {} supplied".format(space, type(space)))
 
 
 def is_compound(space):
@@ -34,7 +34,7 @@ def is_compound(space):
         `Box` spaces, `MultiDiscrete`, `MultiBinary` and `Tuple` spaces
         (A Tuple space with a single, non-compound subspace is still considered
         compound).
-        Any other type of space raises a `TypeError`.
+        :raises TypeError: If the space is no `gym.Space`.
     """
     assert_space(space)
 
@@ -47,7 +47,7 @@ def is_compound(space):
     elif isinstance(space, spaces.Tuple):
         return True
 
-    raise TypeError("Unknown space {} supplied".format(type(space)))
+    raise NotImplementedError("Unknown space {} of type {} supplied".format(space, type(space)))
 
 
 def num_discrete_actions(space):
@@ -55,10 +55,13 @@ def num_discrete_actions(space):
     For a discrete space, gets the number of available actions as a tuple.
     :param gym.Space space: The discrete space which to inspect.
     :return tuple: Tuple of integers containing the number of discrete actions.
-    :raises TypeError: If the space is not discrete.
+    :raises TypeError: If the space is no `gym.Space`.
     """
+    assert_space(space)
+
     if not is_discrete(space):
         raise TypeError("Space {} is not discrete".format(space))
+
     if isinstance(space, spaces.Discrete):
         return tuple((space.n,))
     elif isinstance(space, spaces.MultiDiscrete):
@@ -67,5 +70,5 @@ def num_discrete_actions(space):
     elif isinstance(space, spaces.MultiBinary):
         return (2,) * space.n
 
-    raise NotImplementedError()
+    raise NotImplementedError("Unknown space {} of type {} supplied".format(space, type(space)))  # pragma: no cover
 

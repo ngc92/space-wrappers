@@ -24,6 +24,7 @@ def test_scalar_action_wrapper():
     assert wrapped._action(np.array([1])) == 1
     # TODO do we want an error message here.
     assert wrapped._action([1, 2, 3]) == [1, 2, 3]
+    assert list(wrapped._action(np.array([1, 2, 3]))) == [1, 2, 3]
 
 
 def test_stack_observation():

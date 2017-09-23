@@ -1,0 +1,28 @@
+[report]
+# The test coverage you require, keeping to 100% is not easily
+# possible for all projects but it's a good default for new projects.
+fail_under = 100
+
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if self\.debug
+
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+
+[run]
+# Make sure we require that all branches of the code is covered. So
+# both the if and the else
+branch = True
+
+# only look in the lib
+source = space_wrappers
+
+# No need to test the testing code
+omit = space_wrappers/tests/*
