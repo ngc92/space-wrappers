@@ -85,3 +85,39 @@ class ToScalarActionWrapper(ActionWrapper):
             if action.size == 1:
                 return action[0]
         return action
+
+
+class ContinuingEnvWrapper(Wrapper):
+    """
+    Converts the reward signal of terminal episodes to
+    a signal that corresponds to continuing interacting
+    (reward rate) instead of a terminating episode.
+    To that end, after a specified amount of time,
+    the episode is considered terminated and a final
+    reward is sent, which corresponds to the discounted
+    reward that would be produced if the episode were
+    to continue with a constant reward rate.
+    """
+    def __init__(self, env, gamma, duration):
+        super(ContinuingEnvWrapper, self).__init__(env)
+        self._gamma = gamma
+        self._duration = duration
+        self._count = 0
+        self._reward = 0
+
+    def _reset(self):
+        self._count = 0
+        self._reward = 0
+        return self.env.reset()
+
+    def _step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        self._count += 1
+        self._reward += reward
+        if self._count == self._duration:
+            reward_rate = self._reward / self._duration
+            reward = reward_rate / (1 - self._gamma)
+            print("RR", self._reward, reward)
+            done = True
+
+        return obs, reward, done, info
