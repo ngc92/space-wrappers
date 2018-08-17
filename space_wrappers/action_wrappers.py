@@ -14,7 +14,7 @@ class FlattenedActionWrapper(ActionWrapper):
         super(FlattenedActionWrapper, self).__init__(env)
         trafo = flatten(env.action_space)
         self.action_space = trafo.target
-        self._action = trafo.convert_from
+        self.action = trafo.convert_from
 
 
 class DiscretizedActionWrapper(ActionWrapper):
@@ -26,7 +26,7 @@ class DiscretizedActionWrapper(ActionWrapper):
         super(DiscretizedActionWrapper, self).__init__(env)
         trafo = discretize(env.action_space, steps)
         self.action_space = trafo.target
-        self._action = trafo.convert_from
+        self.action = trafo.convert_from
 
 
 class RescaledActionWrapper(ActionWrapper):
@@ -41,4 +41,4 @@ class RescaledActionWrapper(ActionWrapper):
         super(RescaledActionWrapper, self).__init__(env)
         trafo = rescale(env.action_space, low=low, high=high)
         self.action_space = trafo.target
-        self._action = trafo.convert_from
+        self.action = trafo.convert_from

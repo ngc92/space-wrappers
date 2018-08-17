@@ -20,6 +20,9 @@ respective docstrings.
 * RescaledObservationWrapper
 * StackObservationWrapper
 
+### Misc
+* ContinuingEnvWrapper
+
 
 ## Usage Example
 Suppose you want to train a (D)DQN agent for an environment

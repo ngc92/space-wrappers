@@ -66,7 +66,7 @@ def num_discrete_actions(space):
         return tuple((space.n,))
     elif isinstance(space, spaces.MultiDiscrete):
         # add +1 here as space.high is an inclusive bound
-        return tuple(space.high - space.low + 1)
+        return tuple(space.nvec)
     elif isinstance(space, spaces.MultiBinary):
         return (2,) * space.n
 

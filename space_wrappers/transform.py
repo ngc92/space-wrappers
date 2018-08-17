@@ -71,7 +71,7 @@ def discretize(space, steps):
             # MultiDiscrete is inclusive, thus we need steps-1 as last value
             # currently, MultiDiscrete iterates twice over its input, which is not possible for a zip
             # result in python 3
-            discrete_space = spaces.MultiDiscrete(list(zip(starts.flatten(), (steps-1).flatten())))
+            discrete_space = spaces.MultiDiscrete(steps.flatten())
             lo = space.low.flatten()
             hi = space.high.flatten()
 
@@ -124,7 +124,7 @@ def flatten(space):
 
     elif isinstance(space, (spaces.MultiDiscrete, spaces.MultiBinary)):
         if isinstance(space, spaces.MultiDiscrete):
-            ranges = [range(space.low[i], space.high[i]+1, 1) for i in range(space.num_discrete_space)]
+            ranges = [range(0, k, 1) for k in space.nvec]
         elif isinstance(space, spaces.MultiBinary):  # pragma: no branch
             ranges = [range(0, 2) for i in range(space.n)]
         prod   = itertools.product(*ranges)

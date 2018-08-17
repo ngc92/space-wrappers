@@ -9,7 +9,7 @@ class ProvideEnv(gym.Env):
     def __init__(self):
         super(ProvideEnv, self).__init__()
 
-    def _step(self, action):
+    def step(self, action):
         return self.provide_observation, 0.0, True, {}
 
 entry_point = "space_wrappers.tests.test_observation_wrappers:ProvideEnv"
@@ -18,7 +18,7 @@ gym.envs.register(id='ProvideTest-v0', entry_point=entry_point)
 
 def test_discretized_wrapper():
     expect = gym.make("ProvideTest-v0")
-    cont = spaces.Box(np.array([0.0]), np.array([1.0]))
+    cont = spaces.Box(np.array([0.0]), np.array([1.0]), dtype=np.float32)
     expect.observation_space = cont
     expect.provide_observation = 0.5
     wrapper = DiscretizedObservationWrapper(expect, 3)
@@ -30,7 +30,7 @@ def test_discretized_wrapper():
 
 def test_flattened_wrapper():
     expect = gym.make("ProvideTest-v0")
-    md = spaces.MultiDiscrete([(0, 1), (0, 1)])
+    md = spaces.MultiDiscrete([2, 2])
     expect.observation_space = md
     expect.provide_observation  = (1, 1)
     wrapper = FlattenedObservationWrapper(expect)
@@ -41,7 +41,7 @@ def test_flattened_wrapper():
 
 def test_rescaled_wrapper():
     expect = gym.make("ProvideTest-v0")
-    bx = spaces.Box(np.array([0.0]), np.array([1.0]))
+    bx = spaces.Box(np.array([0.0]), np.array([1.0]), dtype=np.float32)
     expect.observation_space = bx
     expect.provide_observation  = 0.5
     wrapper = RescaledObservationWrapper(expect, np.array([1.0]), np.array([2.0]))
