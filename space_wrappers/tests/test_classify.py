@@ -29,7 +29,7 @@ def test_is_compound():
     assert is_compound(MultiDiscrete([4, 5]))
     assert is_compound(MultiBinary(5))
     assert is_compound(Tuple((Discrete(5), Discrete(4))))
-    assert is_compound(Box(np.zeros(2), np.ones(2)))
+    assert is_compound(Box(np.zeros(2), np.ones(2), dtype=np.float32))
     assert not is_compound(Box(np.zeros(1), np.ones(1), dtype=np.float32))
 
     with pytest.raises(TypeError):

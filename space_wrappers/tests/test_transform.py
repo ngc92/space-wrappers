@@ -147,7 +147,7 @@ def test_rescale_discrete(space):
 
 def test_rescale_tuple():
     with pytest.raises(NotImplementedError):
-        rescale(Tuple([Box(0, 1, (1, 1))]), 0.0, 1.0)
+        rescale(Tuple([Box(0, 1, (1, 1), dtype=np.float32)]), 0.0, 1.0)
 
 
 def test_rescale_box():
@@ -159,7 +159,7 @@ def test_rescale_box():
     check_convert(trafo, [2.0, 1.0], [1.0, 2.0])
 
     # scalar rescale
-    s = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]))
+    s = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]), dtype=np.float32)
     trafo = rescale(s, 0.0, 1.0)
 
     assert trafo.target == Box(np.array([0.0, 0.0]), np.array([1.0, 1.0]), dtype=np.float32)

@@ -51,3 +51,4 @@ print(wrapped.action_space.sample())
 - [ ] More Sanity checks
 - [ ] Image transformations (resample, resize, ...)
 - [ ] Array Transformations (reshape)
+- [ ] allow pickling of wrapped envs + corresponding tests 

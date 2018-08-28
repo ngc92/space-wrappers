@@ -1,7 +1,7 @@
 [report]
 # The test coverage you require, keeping to 100% is not easily
 # possible for all projects but it's a good default for new projects.
-fail_under = 100
+fail_under = 90
 
 # Regexes for lines to exclude from consideration
 exclude_lines =

@@ -12,6 +12,7 @@ class ExpectEnv(gym.Env):
     def step(self, action):
         assert action == self.expectation, "{} != {}".format(action, self.expectation)
 
+
 entry_point = "space_wrappers.tests.test_action_wrappers:ExpectEnv"
 gym.envs.register(id='ExpectTest-v0', entry_point=entry_point)
 

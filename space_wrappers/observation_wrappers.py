@@ -11,7 +11,7 @@ class FlattenedObservationWrapper(ObservationWrapper):
         super(FlattenedObservationWrapper, self).__init__(env)
         trafo = flatten(env.observation_space)
         self.observation_space = trafo.target
-        self._observation = trafo.convert_to
+        self.observation = trafo.convert_to
 
 
 class DiscretizedObservationWrapper(ObservationWrapper):
@@ -23,7 +23,7 @@ class DiscretizedObservationWrapper(ObservationWrapper):
         super(DiscretizedObservationWrapper, self).__init__(env)
         trafo = discretize(env.observation_space, steps)
         self.observation_space = trafo.target
-        self._observation = trafo.convert_to
+        self.observation = trafo.convert_to
 
 
 class RescaledObservationWrapper(ObservationWrapper):
@@ -35,4 +35,4 @@ class RescaledObservationWrapper(ObservationWrapper):
         super(RescaledObservationWrapper, self).__init__(env)
         trafo = rescale(env.observation_space, low=low, high=high)
         self.observation_space = trafo.target
-        self._observation = trafo.convert_to
+        self.observation = trafo.convert_to

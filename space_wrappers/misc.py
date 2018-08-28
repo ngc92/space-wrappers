@@ -74,15 +74,15 @@ class StackObservationWrapper(Wrapper):
         high = env.observation_space.high
         low = np.stack([low]*count, axis=axis)
         high = np.stack([high]*count, axis=axis)
-        self.observation_space = spaces.Box(low, high)
+        self.observation_space = spaces.Box(low, high, dtype=env.observation_space.dtype)
 
-    def _step(self, action):
+    def step(self, action):
         obs, rew, done, info = self.env.step(action)
         self._observations.append(obs)
 
         return np.stack(self._observations, axis=self._axis), rew, done, info
 
-    def _reset(self):
+    def reset(self):
         obs = self.env.reset()
         for i in range(self._observations.maxlen):
             self._observations.append(obs)

@@ -9,6 +9,40 @@ from .classify import *
 Transform = namedtuple('Transform', ['original', 'target', 'convert_to', 'convert_from'])
 
 
+# small helper functions.
+def _identity(x):
+    return x
+
+
+class _Lookup(object):
+    def __init__(self, source):
+        self._source = source
+
+    def __call__(self, key):
+        return self._source[key]
+
+
+class _LinearTransform(object):
+    def __init__(self, offset, slope, dtype=float):
+        self._offset = offset
+        self._slope = slope
+        self._dtype = dtype
+
+    def __call__(self, x):
+        return self._dtype(self._offset + self._slope * float(x))
+
+
+class _LinearTransformArray(object):
+    def __init__(self, offset, slope, shape, dtype=float):
+        self._offset = offset
+        self._slope = slope
+        self._dtype = dtype
+        self._shape = shape
+
+    def __call__(self, x):
+        return np.reshape(self._offset + self._slope * x, self._shape).astype(self._dtype)
+
+
 # Discretization 
 def discretize(space, steps):
     """
@@ -38,7 +72,7 @@ def discretize(space, steps):
     # changing envs that are not already discrete.
 
     if is_discrete(space):
-        return Transform(space, space, lambda x: x, lambda x: x)
+        return Transform(space, space, _identity, _identity)
 
     # check that step number is valid and convert steps into a np array
     if not isinstance(steps, numbers.Integral):
@@ -54,12 +88,8 @@ def discretize(space, steps):
             lo = space.low[0]
             hi = space.high[0]
 
-            def convert(x):
-                return lo + (hi - lo) * float(x) / (steps-1)
-
-            def back(x):
-                return int((x - lo) * (steps-1) / (hi - lo))
-
+            convert = _LinearTransform(lo, (hi-lo) / (steps - 1.0))
+            back = _LinearTransform(-lo * (steps-1) / (hi - lo), (steps - 1.0) / (hi-lo), int)
             return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=back)
         else:
             if isinstance(steps, numbers.Integral):
@@ -67,19 +97,13 @@ def discretize(space, steps):
             if steps.shape != space.shape:
                 raise ValueError("Supplied steps {} have invalid shape, expected {}".format(steps, steps.shape,
                                                                                             space.shape))
-            starts = np.zeros_like(steps)
-            # MultiDiscrete is inclusive, thus we need steps-1 as last value
-            # currently, MultiDiscrete iterates twice over its input, which is not possible for a zip
-            # result in python 3
+
             discrete_space = spaces.MultiDiscrete(steps.flatten())
             lo = space.low.flatten()
             hi = space.high.flatten()
 
-            def convert(x):
-                return np.reshape(lo + (hi - lo) * x / (steps-1), space.shape)
-
-            def back(x):
-                return np.reshape((x - lo) * (steps-1) / (hi - lo), (len(steps),)).astype(int)
+            convert = _LinearTransformArray(lo, (hi - lo) / (steps - 1.0), space.shape)
+            back = _LinearTransformArray(-lo * (steps - 1) / (hi - lo), (steps - 1.0) / (hi - lo), (len(steps),), int)
 
             return Transform(original=space, target=discrete_space, convert_from=convert, convert_to=back)
 
@@ -106,7 +130,7 @@ def flatten(space):
     """
     # no need to do anything if already flat
     if not is_compound(space):
-        return Transform(space, space, lambda x: x, lambda x: x)
+        return Transform(space, space, _identity, _identity)
 
     if isinstance(space, spaces.Box):
         shape = space.low.shape
@@ -119,7 +143,7 @@ def flatten(space):
         def back(x):
             return np.reshape(x, lo.shape)
 
-        flat_space = spaces.Box(low=lo, high=hi)
+        flat_space = spaces.Box(low=lo, high=hi, dtype=space.dtype)
         return Transform(original=space, target=flat_space, convert_from=convert, convert_to=back)
 
     elif isinstance(space, (spaces.MultiDiscrete, spaces.MultiBinary)):
@@ -131,9 +155,8 @@ def flatten(space):
         lookup = list(prod)
         inverse_lookup = {value: key for (key, value) in enumerate(lookup)}
         flat_space = spaces.Discrete(len(lookup))
-        convert = lambda x: lookup[x]
-        back    = lambda x: inverse_lookup[x]
-        return Transform(original=space, target=flat_space, convert_from=convert, convert_to=back)
+        return Transform(original=space, target=flat_space,
+                         convert_from=_Lookup(lookup), convert_to=_Lookup(inverse_lookup))
 
     raise NotImplementedError("Does not know how to flatten {}".format(type(space)))  # pragma: no cover
 
@@ -200,5 +223,5 @@ def rescale(space, low, high):
     def back(x):
         return (x - lo) / scale_factor + offset
 
-    scaled_space = spaces.Box(low, high)
+    scaled_space = spaces.Box(low, high, dtype=space.dtype)
     return Transform(original=space, target=scaled_space, convert_from=convert, convert_to=back)
