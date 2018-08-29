@@ -54,6 +54,9 @@ def test_discretize_nd_box():
     check_convert(trafo, (0, 0), [0.0, 1.0])
     check_convert(trafo, (4, 9), [1.0, 2.0])
 
+    # check that it also works with np.ndarray data
+    check_convert(trafo, np.array([0, 0]), [0.0, 1.0])
+
 
 def test_discretize_errors():
     cont = Box(np.array([0.0, 1.0]), np.array([1.0, 2.0]), dtype=np.float32)
@@ -71,6 +74,7 @@ def test_discretize_errors():
 
     with pytest.raises(ValueError):
         trafo = discretize(cont, [5, 5, 5])
+
 
 # flatten
 def test_flatten_single():
