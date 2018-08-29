@@ -19,6 +19,8 @@ class _Lookup(object):
         self._source = source
 
     def __call__(self, key):
+        if isinstance(key, (np.ndarray, list)):
+            key = tuple(key)
         return self._source[key]
 
 

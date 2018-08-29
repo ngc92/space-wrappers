@@ -121,6 +121,10 @@ def test_flatten_discrete():
         actions = list(filter(lambda x: x != a, actions))
     assert len(actions) == 0
 
+    # check support for numpy array and list
+    assert trafo.convert_to((1, 0, 1)) == trafo.convert_to(np.array([1, 0, 1]))
+    assert trafo.convert_to((1, 0, 1)) == trafo.convert_to([1, 0, 1])
+
 
 def test_flatten_continuous():
     ct = Box(np.zeros((2,2)), np.ones((2, 2)), dtype=np.float32)
