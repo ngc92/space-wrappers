@@ -83,6 +83,34 @@ class StackObservationWrapper(Wrapper):
         return np.stack(self._observations, axis=self._axis)
 
 
+class ObserveLastActionWrapper(Wrapper):
+    """
+    This wrapper changes an environment with observation space S and
+    action space A into one with observation space Tuple(S, A), by including
+    the most recent action in the state space.
+    """
+    def __init__(self, env, default_action=None):
+        """
+        :param gym.Env env: The environment to wrap.
+        :param int default_action: The action to use after a reset.
+        """
+        super(ObserveLastActionWrapper, self).__init__(env)
+        if default_action is None and isinstance(env.action_space, gym.spaces.Box):
+            default_action = np.zeros_like(env.action_space.low)
+
+        self._default_action = default_action
+        self.observation_space = gym.spaces.Tuple((env.observation_space, env.action_space))
+
+    def step(self, action):
+        obs, rew, done, info = self.env.step(action)
+
+        return (obs, action), rew, done, info
+
+    def reset(self):
+        obs = self.env.reset()
+        return obs, self._default_action
+
+
 class ToScalarActionWrapper(ActionWrapper):
     """
     This wrapper does not change the `action_space` per se,

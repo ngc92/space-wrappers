@@ -134,6 +134,26 @@ def test_flatten_continuous():
     check_convert(trafo, [1, 2, 3, 4], [[1, 2], [3, 4]])
 
 
+def test_flatten_tuple():
+    s1 = Box(np.zeros(3), np.ones(3), dtype=np.float32)
+    s2 = Box(np.ones(2), np.ones(2)*2, dtype=np.float32)
+    trafo = flatten(Tuple((s1, s2)))
+
+    assert trafo.target == Box(np.asarray([0.0, 0, 0, 1, 1]), np.asarray([1.0, 1, 1, 2, 2]), dtype=np.float32)
+    assert trafo.convert_to(([0, 1, 0], [1, 2])) == pytest.approx([0, 1, 0, 1, 2],)
+    assert trafo.convert_from([0, 1, 0, 1, 2]) == (pytest.approx([0, 1, 0]), pytest.approx([1, 2]))
+
+
+def test_flatten_tuple_recursive():
+    s1 = Box(np.zeros((2, 2)), np.ones((2, 2)), dtype=np.float32)
+    s2 = Box(np.ones(2), np.ones(2) * 2, dtype=np.float32)
+    trafo = flatten(Tuple((s1, s2)))
+
+    assert trafo.target == Box(np.asarray([0.0, 0, 0, 0, 1, 1]), np.asarray([1.0, 1, 1, 1, 2, 2]), dtype=np.float32)
+    assert trafo.convert_to(([[0, 1], [1, 0]], [1, 2])) == pytest.approx([0, 1, 1, 0, 1, 2], )
+    assert trafo.convert_from([0, 1, 1, 0, 1, 2]) == (pytest.approx(np.asarray([[0, 1], [1, 0]])), pytest.approx([1, 2]))
+
+
 def test_flatten_errors():
     class UnknownSpace(gym.Space):
         pass

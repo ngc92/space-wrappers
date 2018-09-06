@@ -45,6 +45,29 @@ class _LinearTransformArray(object):
         return np.reshape(self._offset + self._slope * x, self._shape).astype(self._dtype)
 
 
+class _FlattenTuple(object):
+    def __init__(self, subspace_trafos):
+        self._subspaces = subspace_trafos
+
+    def __call__(self, x):
+        return np.concatenate([trafo.convert_to(val) for trafo, val in zip(self._subspaces, x)])
+
+
+class _DecomposeTuple(object):
+    def __init__(self, subspace_trafos):
+        self._subspaces = subspace_trafos
+
+    def __call__(self, x):
+        last_pos = 0
+        decomposed = []
+        for ss in self._subspaces:
+            n = ss.target.low.size
+            d = x[last_pos:last_pos+n]
+            last_pos += n
+            decomposed.append(ss.convert_from(d))
+        return tuple(decomposed)
+
+
 # Discretization 
 def discretize(space, steps):
     """
@@ -131,7 +154,7 @@ def flatten(space):
             an already flat space by `is_compound`.
     """
     # no need to do anything if already flat
-    if not is_compound(space):
+    if is_flat(space):
         return Transform(space, space, _identity, _identity)
 
     if isinstance(space, spaces.Box):
@@ -159,6 +182,14 @@ def flatten(space):
         flat_space = spaces.Discrete(len(lookup))
         return Transform(original=space, target=flat_space,
                          convert_from=_Lookup(lookup), convert_to=_Lookup(inverse_lookup))
+
+    elif isinstance(space, spaces.Tuple):
+        # first ensure all subspaces are flat.
+        flat_subs = [flatten(sub) for sub in space.spaces]
+        lo = np.concatenate([f.target.low for f in flat_subs])
+        hi = np.concatenate([f.target.high for f in flat_subs])
+        return Transform(space, target=spaces.Box(low=lo, high=hi), convert_to=_FlattenTuple(flat_subs),
+                         convert_from=_DecomposeTuple(flat_subs))
 
     raise NotImplementedError("Does not know how to flatten {}".format(type(space)))  # pragma: no cover
 

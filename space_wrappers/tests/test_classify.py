@@ -39,6 +39,21 @@ def test_is_compound():
         is_compound(UnknownSpace())
 
 
+def test_is_flat():
+    assert is_flat(Discrete(10))
+    assert not is_flat(MultiDiscrete([4, 5]))
+    assert not is_flat(MultiBinary(5))
+    assert not is_flat(Tuple((Discrete(5), Discrete(4))))
+    assert is_flat(Box(np.zeros(2), np.ones(2), dtype=np.float32))
+    assert not is_flat(Box(np.zeros((2, 3)), np.ones((2, 3)), dtype=np.float32))
+
+    with pytest.raises(TypeError):
+        is_flat(5)
+
+    with pytest.raises(NotImplementedError):
+        is_flat(UnknownSpace())
+
+
 def test_num_discrete_actions():
     with pytest.raises(TypeError):
         num_discrete_actions(Box(np.zeros(2), np.ones(2), dtype=np.float32))

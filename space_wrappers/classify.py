@@ -50,6 +50,26 @@ def is_compound(space):
     raise NotImplementedError("Unknown space {} of type {} supplied".format(space, type(space)))
 
 
+def is_flat(space):
+    """
+    Checks whether space is a flat space. Flat spaces ore either Discrete, or Box spaces with rank less or equal one.
+    :param gym.Space space: The space to check for flatness.
+    :return: Whether the space is flat.
+    """
+    assert_space(space)
+
+    if isinstance(space, spaces.Discrete):
+        return True
+    elif isinstance(space, spaces.Box):
+        return len(space.shape) <= 1
+    elif isinstance(space, (spaces.MultiDiscrete, spaces.MultiBinary)):
+        return False
+    elif isinstance(space, spaces.Tuple):
+        return False
+
+    raise NotImplementedError("Unknown space {} of type {} supplied".format(space, type(space)))
+
+
 def num_discrete_actions(space):
     """
     For a discrete space, gets the number of available actions as a tuple.

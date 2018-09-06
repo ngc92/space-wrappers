@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='space_wrappers',
-      version = '0.1.1',
+      version = '0.1.2',
       install_requires = ['gym'],
       test_rewuires = ["pytest"],
       packages = find_packages(),
