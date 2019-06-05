@@ -1,6 +1,6 @@
 import gym
 from space_wrappers.transform import discretize, flatten, rescale
-from gym.spaces import *
+from gym.spaces import Box, Discrete, MultiDiscrete, MultiBinary, Tuple
 import numpy as np
 import itertools
 import pytest
